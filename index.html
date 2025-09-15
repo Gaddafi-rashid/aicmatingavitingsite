@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Matinga Voting Site</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore.js"></script>
+</head>
+<body>
+  
+  <!-- Voting Form -->
+  <form id="voteForm" class="vote-form">
+    <div class="form-header">
+      <img src="logo.png" alt="Logo" class="logo">
+      <h2>Aic Matinga Voting Site</h2>
+    </div>
+
+    <!-- Full Name input -->
+    <input type="text" 
+       id="FullName" 
+       placeholder="Enter your Full Name" 
+       pattern="^[A-Za-z][A-Za-z'-]{1,}(?: [A-Za-z][A-Za-z'-]{1,})+$" 
+       title="Please enter your real full name (at least two names, letters only, may include - or ')" 
+       required>
+
+<script>
+  const fullNameInput = document.getElementById("FullName");
+
+  fullNameInput.addEventListener("input", function () {
+    this.value = this.value
+      .split(" ") // split by spaces
+      .map(word => 
+        word
+          .split(/([-'])/) // split by hyphen/apostrophe but keep them
+          .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+          .join("")
+      )
+      .join(" ");
+  });
+</script>
+
+
+    <!-- Project Number input -->
+    <input type="text" 
+           id="voterNumber" 
+           placeholder="Enter your Project Number" 
+           maxlength="9"
+           required>
+    <p id="errorMessage" style="color: red; font-size: 14px; display: none;"></p>
+
+    <!-- Candidates -->
+    <fieldset>
+  <legend><strong>Select Candidate:</strong></legend>
+
+  <label><input type="radio" name="candidate" value="YVONNE"> Candidate 1 - YVONNE</label><br>
+  <label><input type="radio" name="candidate" value="JOSEPH"> Candidate 2 - JOSEPH</label><br>
+  <label><input type="radio" name="candidate" value="ANN"> Candidate 3 - ANN</label><br>
+  <label><input type="radio" name="candidate" value="JOEL"> Candidate 4 - JOEL</label><br>
+</fieldset>
+    <!-- Submit button -->
+    <button id="whatsappReceipt" type="button">📩 Send vote via WhatsApp</button>
+  </form>
+
+  <script>
+    // Input + Error label
+    const voterInput = document.getElementById("voterNumber");
+    const errorMessage = document.getElementById("errorMessage");
+
+    // Validation function
+    function isValidProjectNumber(value) {
+      const pattern = /^KE2380\d{3}$/; // Must start with KE2380 + 3 digits
+      return pattern.test(value);
+    }
+
+    // Live validation
+    voterInput.addEventListener("input", function () {
+      if (voterInput.value === "") {
+        errorMessage.style.display = "none";
+      } else if (!isValidProjectNumber(voterInput.value)) {
+        errorMessage.style.display = "block";
+        errorMessage.textContent = "❌ Must start with KE2380 and be followed by 3 digits (total 9 characters).";
+      } else {
+        errorMessage.style.display = "none";
+      }
+    });
+
+    // Collect vote data
+    function getVoteData() {
+      const name = document.getElementById("FullName").value.trim();
+      const projectNumber = document.getElementById("voterNumber").value.trim();
+      const choice = document.querySelector("input[name='candidate']:checked");
+
+      if (!name) { alert("Please enter your Full Name."); return null; }
+      if (!isValidProjectNumber(projectNumber)) {
+        alert("Invalid Project Number. Must start with KE2380 and have 9 characters total.");
+        return null;
+      }
+      if (!choice) { alert("Please select a candidate."); return null; }
+
+      return { 
+        name, 
+        projectNumber, 
+        candidate: choice.value, 
+        timestamp: new Date().toISOString() 
+      };
+    }
+
+    // WhatsApp receipt
+    document.getElementById("whatsappReceipt").addEventListener("click", function() {
+      const data = getVoteData();
+      if (!data) return;
+
+      const message =
+        `🗳️ Aic Matinga CDC Voting Site\n\n` +
+        `Full Name: ${data.name}\n` +
+        `Project Number: ${data.projectNumber}\n` +
+        `Chosen Candidate: ${data.candidate}\n` +
+        `Date: ${new Date().toLocaleDateString()}`;
+
+      const phoneNumber = "254712605550"; // Admin WhatsApp number
+      const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+      window.open(url, "_blank");
+      alert("✅ Your vote was submitted successfully!");
+    });
+  </script>
+</body>
+</html>
